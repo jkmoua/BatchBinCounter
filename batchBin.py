@@ -1,5 +1,5 @@
-# Author: Jim K Moua
-# Last updated 18/05/23
+# AUTHOR: Jim K Moua
+# LAST UPDATED 18/05/23
 
 # This program reads PLC tag data every second and makes respective API calls when conditions are met
 
@@ -12,9 +12,9 @@ _batchID = None
 _currentBinCount = 0
 
 def getBatchID():
-    '''
+    """
     Make GET API call to localhost and store batch ID into variable
-    '''
+    """
     global _batchID
     
     headers = { 'accept' : 'application/json' } 
@@ -25,9 +25,9 @@ def getBatchID():
 
 
 def postBatchBin():
-    '''
+    """
     Make POST API call to localhost
-    '''
+    """
     global _batchID
     
     url = 'http://localhost:88/api/v1/batchbins'
@@ -38,9 +38,9 @@ def postBatchBin():
 
 
 def readPLC_BinCount():
-    '''
+    """
     Read PLC tag and post API calls if conditions are met
-    '''
+    """
     global _currentBinCount
     
     with PLC() as comm:
@@ -55,9 +55,9 @@ def readPLC_BinCount():
 
 
 def writePLC_BatchChange():
-    '''
-    Change PLC 'BatchChange' boolean to True
-    '''
+    """
+    Change PLC 'TAG_BatchChange' boolean to True then back to false
+    """
     with PLC() as comm:
         comm.Micro800 = True
         comm.IPAddress = '192.168.99.95'
@@ -68,9 +68,9 @@ def writePLC_BatchChange():
 
 
 def compareBatchID():
-    '''
-    Compare stored batch ID to current batch ID from GET call
-    '''
+    """
+    Compare and update stored batch ID to current batch ID from GET call
+    """
     global _batchID
     
     headers = { 'accept' : 'application/json' }
