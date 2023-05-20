@@ -1,7 +1,7 @@
 # AUTHOR: Jim K Moua
 # LAST UPDATED 18/05/23
 
-# This program reads PLC tag data every second and makes respective API calls when conditions are met
+# This program reads PLC tag data every n seconds and makes respective API calls when conditions are met
 
 import json
 import time
@@ -56,14 +56,23 @@ def readPLC_BinCount():
 
 def writePLC_BatchChange():
     """
-    Change PLC 'TAG_BatchChange' boolean to True then back to false
+    Changes PLC 'TAG_BatchChange' boolean to True then back to false
+    Handles the accumulated bin logic from PLC and makes necessary post calls
     """
+    global _currentBinCount
+
     with PLC() as comm:
         comm.Micro800 = True
         comm.IPAddress = '192.168.99.95'
+        ret = comm.Read('Acc_Bins')
+        accumulatedBins = ret.Value
+        for x in range(0, accumulatedBins):
+            postBatchBin()
         comm.Write('TAG_BatchChange', 1)
-        time.sleep(2)
+        time.sleep(1)
         comm.Write('TAG_BatchChange', 0)
+        time.sleep(30)
+        _currentBinCount = comm.Read('BinCount_CurrentBatch').Value
 
 
 
@@ -77,12 +86,18 @@ def compareBatchID():
     getBatchInfo = requests.get('http://localhost:88/api/v1/batches/activebatches', headers=headers)
     activeBatch = getBatchInfo.json()
     if _batchID != activeBatch[0]['id']:
-        writePLC_BatchChange()
         _batchID = activeBatch[0]['id']
+        writePLC_BatchChange()
 
 
 
-while True:
-    readPLC_BinCount()
-    compareBatchID()
-    time.sleep(1)
+def main():
+    while True:
+        readPLC_BinCount()
+        compareBatchID()
+        time.sleep(0.5)
+
+
+
+if __name__ == "__main__":
+    main()
