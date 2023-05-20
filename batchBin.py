@@ -1,17 +1,17 @@
 # AUTHOR: Jim K Moua
-# LAST UPDATED 19/05/23
+# LAST UPDATED 20/05/23
 
 # This program reads PLC tag data every n seconds and makes respective API calls when conditions are met
 
 import json
 import time
-import requests
 import os
+import requests
 from pylogix import PLC
 
 _batchInfo = {
-    "batchID" : 1,
-    "currentBinCount" : None
+    "batchID" : None,
+    "currentBinCount" : 0
 }
 
 def getBatchID():
@@ -107,7 +107,6 @@ def loadJSONdata():
     global _batchInfo
 
     current_directory = os.getcwd()
-
     file_path = os.path.join(current_directory, 'currentBinCount.json')
 
     if os.path.exists(file_path):
@@ -126,11 +125,11 @@ def main():
 
     while True:
         if readPLC_BinCount():
-            with open(file_path, 'w') as json_file:
-                json.dump(_batchInfo, json_file)
+            with open(json_file, 'w') as file:
+                json.dump(_batchInfo, file)
         if compareBatchID():
-            with open(file_path, 'w') as json_file:
-                json.dump(_batchInfo, json_file)
+            with open(json_file, 'w') as file:
+                json.dump(_batchInfo, file)
         time.sleep(0.5)
 
 
