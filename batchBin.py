@@ -13,9 +13,16 @@ def getBatchID():
     """
     Make GET API call to localhost and return batch ID
     """
-    headers = { 'accept' : 'application/json' } 
-    getBatchInfo = requests.get('http://localhost:88/api/v1/batches/activebatches', headers=headers)
-    activeBatch = getBatchInfo.json()
+    headers = { 'accept' : 'application/json' }
+    try:
+        getBatchInfo = requests.get('http://localhost:88/api/v1/batches/activebatches', headers=headers)
+    except requests.exceptions.ConnectionError:
+        # Log to file
+        with open('error_log.txt', 'a+') as file:
+            file.write(time.strftime("%H:%M:%S") + " "  + time.strftime("%d/%m/%Y") + " - Failed to reach API server for GET.\n")
+        return
+    else:
+        activeBatch = getBatchInfo.json()
 
     return activeBatch[0]['id']
 
@@ -122,12 +129,13 @@ def main():
             with open('batchChangePushbuttonLog.txt', 'a+') as file:
                 file.write(time.strftime("%H:%M:%S") + " "  + time.strftime("%d/%m/%Y") + " - PLC received batch change input\n")
                 batchChangeLogged = True
-                file.close()
 
         TSbatchID = getBatchID()
         if TSbatchID != _batchInfo['batchID']:
             _batchInfo['batchID'] = TSbatchID
             buffer = getAccumulatedBins()
+            with open('batchChangePushbuttonLog.txt', 'a+') as file:
+                file.write(time.strftime("%H:%M:%S") + " "  + time.strftime("%d/%m/%Y") + " - Accumulated Bins added: " + "{}".format(buffer) + "\n")
             for x in range(buffer):
                 postBatchBin(TSbatchID)
             writePLC_BatchChange(1)
