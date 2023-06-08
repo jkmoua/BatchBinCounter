@@ -13,14 +13,15 @@ def getBatchID():
     """
     Make GET API call to localhost and return batch ID
     """
+    url = 'http://localhost:88/api/v1/batches/activebatches'
     headers = { 'accept' : 'application/json' }
     try:
-        getBatchInfo = requests.get('http://localhost:88/api/v1/batches/activebatches', headers=headers)
+        getBatchInfo = requests.get(url, headers=headers)
     except requests.exceptions.ConnectionError:
         # Log to file
         with open('error_log.txt', 'a+') as file:
-            file.write(time.strftime("%H:%M:%S") + " "  + time.strftime("%d/%m/%Y") + " - Failed to reach API server for GET.\n")
-        return
+            file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - Failed to reach API server for GET.\n')
+        return None
     else:
         activeBatch = getBatchInfo.json()
 
@@ -35,7 +36,12 @@ def postBatchBin(batchID):
     url = 'http://localhost:88/api/v1/batchbins'
     payload = { 'batchID' : batchID }
     headers = { 'accept' : 'application/json', 'Content-Type' : 'application/json-patch+json'}
-    requests.post(url, data=json.dumps(payload), headers=headers)
+    try:
+        requests.post(url, data=json.dumps(payload), headers=headers)
+    except requests.exceptions.ConnectionError:
+        with open('error_log.txt', 'a+') as file:
+            file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - Failed to reach API server for POST.\n')
+        return None
 
 
 
@@ -127,7 +133,7 @@ def main():
     while True:
         if (checkBatchChangeInput()) and (batchChangeLogged == False):
             with open('batchChangePushbuttonLog.txt', 'a+') as file:
-                file.write(time.strftime("%H:%M:%S") + " "  + time.strftime("%d/%m/%Y") + " - PLC received batch change input\n")
+                file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - PLC received batch change input\n')
                 batchChangeLogged = True
 
         TSbatchID = getBatchID()
@@ -135,7 +141,7 @@ def main():
             _batchInfo['batchID'] = TSbatchID
             buffer = getAccumulatedBins()
             with open('batchChangePushbuttonLog.txt', 'a+') as file:
-                file.write(time.strftime("%H:%M:%S") + " "  + time.strftime("%d/%m/%Y") + " - Accumulated Bins added: " + "{}".format(buffer) + "\n")
+                file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - Accumulated Bins added: {buffer}\n')
             for x in range(buffer):
                 postBatchBin(TSbatchID)
             writePLC_BatchChange(1)
