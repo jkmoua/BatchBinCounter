@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta http-equiv="refresh" content="5">
-        <title>Document</title>
+        <title>Joey Batches</title>
         <link rel="stylesheet" href="/static/styles.css" />
     </head>
     <body>
@@ -13,11 +13,11 @@
                 <th class="table__cell">{{ header }}</th>
                 {% endfor %}
             </tr>
-            {% for row in data %}
+            {% for dict_item in data | sort(attribute='name') %}
             <tr class="table__row">
-                {% for cell in row %}
-                <td class="table-_cell">{{ cell }}</td>
-                {% endfor %}
+				{% for key, value in dict_item.items() %}
+                <td class="table__cell">{{ value }}</td>
+				{% endfor %}
             </tr>
             {% endfor %}
         </table>

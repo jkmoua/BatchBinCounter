@@ -1,5 +1,5 @@
 # AUTHOR: Jim K Moua
-# LAST UPDATED 23/05/23
+# LAST UPDATED 09/06/23
 
 # This program reads PLC tag data every n seconds and makes respective API calls when conditions are met
 
@@ -137,6 +137,8 @@ def main():
                 batchChangeLogged = True
 
         TSbatchID = getBatchID()
+        if TSbatchID == None:
+            continue
         if TSbatchID != _batchInfo['batchID']:
             _batchInfo['batchID'] = TSbatchID
             buffer = getAccumulatedBins()
@@ -152,6 +154,8 @@ def main():
             batchChangeLogged = False
 
         PLC_BinCount = getPLC_BinCount()
+        if PLC_BinCount == None:
+            continue
         if PLC_BinCount != _batchInfo['currentBinCount'] and PLC_BinCount != 0:
             postBatchBin(TSbatchID)
             _batchInfo['currentBinCount'] = PLC_BinCount

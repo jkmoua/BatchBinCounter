@@ -1,99 +1,90 @@
 # AUTHOR: Jim K Moua
-# LAST UPDATED 19/05/23
+# LAST UPDATED 09/06/23
 
 # This program reads PLC tag data every n seconds and makes respective API calls when conditions are met
 
 import json
 import time
-import requests
 import os
+import requests
 from pylogix import PLC
-
-_batchInfo = {
-    "batchID" : 1,
-    "currentBinCount" : None
-}
 
 def getBatchID():
     """
-    Make GET API call to localhost and store batch ID into variable
+    Make GET API call to localhost and return batch ID
     """
-    global _batchInfo
-    
-    headers = { 'accept' : 'application/json' } 
-    getBatchInfo = requests.get('http://localhost:88/api/v1/batches/activebatches', headers=headers)
-    activeBatch = getBatchInfo.json()
-    _batchInfo['batchID'] = activeBatch[0]['id']
+    url = 'http://localhost:88/api/v1/batches/activebatches'
+    headers = { 'accept' : 'application/json' }
+    try:
+        getBatchInfo = requests.get(url, headers=headers)
+    except requests.exceptions.ConnectionError:
+        # Log to file
+        with open('error_log.txt', 'a+') as file:
+            file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - Failed to reach API server for GET.\n')
+        return None
+    else:
+        activeBatch = getBatchInfo.json()
+
+    return activeBatch[0]['id']
 
 
 
-def postBatchBin():
+def postBatchBin(batchID):
     """
     Make POST API call to localhost
     """
-    global _batchInfo
-    
     url = 'http://localhost:88/api/v1/batchbins'
-    payload = { 'batchID' : _batchInfo['batchID'] }
+    payload = { 'batchID' : batchID }
     headers = { 'accept' : 'application/json', 'Content-Type' : 'application/json-patch+json'}
-    requests.post(url, data=json.dumps(payload), headers=headers)
+    try:
+        requests.post(url, data=json.dumps(payload), headers=headers)
+    except requests.exceptions.ConnectionError:
+        with open('error_log.txt', 'a+') as file:
+            file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - Failed to reach API server for POST.\n')
+        return None
 
 
 
-def readPLC_BinCount():
+def getPLC_BinCount():
     """
-    Read PLC tag and post API calls if conditions are met
-    """
-    global _batchInfo
-    
+    Returns 'BinCount_CurrentBatch' value from PLC
+    """ 
     with PLC() as comm:
         comm.Micro800 = True
         comm.IPAddress = '192.168.99.95'
         ret = comm.Read('BinCount_CurrentBatch')
-        if _batchInfo['currentBinCount'] != ret.Value and ret.Value != 0:
-            _batchInfo['currentBinCount'] = ret.Value
-            getBatchID()
-            postBatchBin()
-            return True
-        
-    return False
+        return ret.Value
 
 
 
-def writePLC_BatchChange():
+def getAccumulatedBins():
     """
-    Changes PLC 'TAG_BatchChange' boolean to True then back to false
-    Handles the accumulated bin logic from PLC and makes necessary post calls
+    Returns 'Acc_Bins' value from PLC
     """
-    global _batchInfo
-
     with PLC() as comm:
         comm.Micro800 = True
         comm.IPAddress = '192.168.99.95'
         ret = comm.Read('Acc_Bins')
-        accumulatedBins = ret.Value
-        for x in range(0, accumulatedBins):
-            postBatchBin()
-        comm.Write('TAG_BatchChange', 1)
-        time.sleep(1)
-        comm.Write('TAG_BatchChange', 0)
-        time.sleep(30)
-        _batchInfo['currentBinCount'] = comm.Read('BinCount_CurrentBatch').Value
+        return ret.Value
 
 
 
-def compareBatchID():
+def writePLC_BatchChange(value):
     """
-    Compare and update stored batch ID to current batch ID from GET call
+    Writes boolean to 'TAG_BatchChange' value in PLC
     """
-    global _batchInfo
+    with PLC() as comm:
+        comm.Micro800 = True
+        comm.IPAddress = '192.168.99.95'
+        comm.Write('TAG_BatchChange', value)
 
-    headers = { 'accept' : 'application/json' }
-    getBatchInfo = requests.get('http://localhost:88/api/v1/batches/activebatches', headers=headers)
-    activeBatch = getBatchInfo.json()
-    if _batchInfo['batchID'] != activeBatch[0]['id']:
-        _batchInfo['batchID'] = activeBatch[0]['id']
-        writePLC_BatchChange()
+
+
+def batchIDisSame(batchID):
+    """
+    Returns true if batchID is equal to getBatchID()
+    """
+    if getBatchID() == batchID:
         return True
 
     return False
@@ -107,7 +98,6 @@ def loadJSONdata():
     global _batchInfo
 
     current_directory = os.getcwd()
-
     file_path = os.path.join(current_directory, 'currentBinCount.json')
 
     if os.path.exists(file_path):
@@ -121,16 +111,51 @@ def loadJSONdata():
 
 
 
-def main():
-    json_file = loadJSONdata()
+def checkBatchChangeInput():
+    with PLC() as comm:
+        comm.Micro800 = True
+        comm.IPAddress = '192.168.99.95'
+        ret = comm.Read('BatchChange_Latch')
+        if ret.Value == 1:
+            return True
+        
+    return False
 
+
+
+def main():
+    _batchInfo = {
+        "batchID" : getBatchID(),
+        "currentBinCount" : getPLC_BinCount()
+    }
+
+    batchChangeLogged = False
     while True:
-        if readPLC_BinCount():
-            with open(file_path, 'w') as json_file:
-                json.dump(_batchInfo, json_file)
-        if compareBatchID():
-            with open(file_path, 'w') as json_file:
-                json.dump(_batchInfo, json_file)
+        if (checkBatchChangeInput()) and (batchChangeLogged == False):
+            with open('batchChangePushbuttonLog.txt', 'a+') as file:
+                file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - PLC received batch change input\n')
+                batchChangeLogged = True
+
+        TSbatchID = getBatchID()
+        if TSbatchID != _batchInfo['batchID']:
+            _batchInfo['batchID'] = TSbatchID
+            buffer = getAccumulatedBins()
+            with open('batchChangePushbuttonLog.txt', 'a+') as file:
+                file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - Accumulated Bins added: {buffer}\n')
+            for x in range(buffer):
+                postBatchBin(TSbatchID)
+            writePLC_BatchChange(1)
+            time.sleep(1)
+            writePLC_BatchChange(0)
+            time.sleep(10)
+            _batchInfo['currentBinCount'] = getPLC_BinCount()
+            batchChangeLogged = False
+
+        PLC_BinCount = getPLC_BinCount()
+        if PLC_BinCount != _batchInfo['currentBinCount'] and PLC_BinCount != 0:
+            postBatchBin(TSbatchID)
+            _batchInfo['currentBinCount'] = PLC_BinCount
+
         time.sleep(0.5)
 
 
