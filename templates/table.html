@@ -2,11 +2,18 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta http-equiv="refresh" content="5">
+        <meta http-equiv="refresh" content="300"/>
         <title>Joey Batches</title>
         <link rel="stylesheet" href="/static/styles.css" />
     </head>
     <body>
+		<center>
+			<h1>
+			Joey - Daily Run
+			<img src="{{url_for('static', filename='Rivermaid_Logo.png')}}"align="left" height="170" width="216"/>
+			<img src="{{url_for('static', filename='ellips-next-level-grading.png')}}"align="right" height="89" width="216"/ class="img">
+			</h1>
+		</center>
         <table class="table">
             <tr class="table__header">
                 {% for header in headings %}
@@ -16,7 +23,17 @@
             {% for dict_item in data | sort(attribute='name') %}
             <tr class="table__row">
 				{% for key, value in dict_item.items() %}
-                <td class="table__cell">{{ value }}</td>
+					{% if value == "StandBy" %}
+					<td class="table__cell standby">{{ value }}</td>
+					{% elif value == "Active" %}
+					<td class="table__cell active">{{ value }}</td>
+					{% elif value == "Paused" %}
+					<td class="table__cell paused">{{ value }}</td>
+					{% elif value == "Done" %}
+					<td class="table__cell done">{{ value }}</td>
+					{% else %}
+					<td class="table__cell">{{ value }}</td>
+					{% endif %}
 				{% endfor %}
             </tr>
             {% endfor %}
