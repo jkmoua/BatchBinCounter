@@ -37,7 +37,7 @@ def get_last_12_hours_batches(batchResponse):
                 "name" : batchResponse[x]["name"],
                 "expectedBinCount" : batchResponse[x]["expectedBinCount"],
                 "tippedBinCount" : batchResponse[x]["tippedBinCount"],
-                "startDateUtc" : batchTime,
+                "startDateUtc" : batchResponse[x]["startDateUtc"],
                 "status" : batchResponse[x]["status"]
                 })
         
@@ -47,6 +47,7 @@ def get_last_12_hours_batches(batchResponse):
         formattedDate = formattedDate.split('Z')[0]
         batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
         if abs(batchTime - datetime.now()) < timedelta(hours=12):
+            batchTime = batchTime - timedelta(hours=7)
             batchList.append({
                 "name" : batchResponse[x]["name"],
                 "expectedBinCount" : batchResponse[x]["expectedBinCount"],
@@ -65,4 +66,7 @@ def table():
     return render_template("table.html", headings=headings, data=get_last_12_hours_batches(getBatches()))
 
 if __name__ == "__main__":
-    app.run(debug=True, port=7000)
+    #app.run(debug=True, port=7000)
+    from waitress import serve
+
+    serve(app, port=7000)
