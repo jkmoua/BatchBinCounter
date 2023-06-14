@@ -23,12 +23,15 @@ def getBatches():
     except requests.exceptions.ConnectionError:
         # Log to file
         with open('error_log.txt', 'a+') as file:
-            file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - Failed to reach API server for GET.\n')
+            file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - WebApp unable to reach TrueSort API.\n')
         return None
     else:
         return getBatches.json()
     
 def get_last_12_hours_batches(batchResponse):
+    if batchResponse == None:
+        return None
+
     batchList = []
 
     for x in range(len(batchResponse)):
@@ -58,15 +61,14 @@ def get_last_12_hours_batches(batchResponse):
             
     return batchList
 
-def main():
-    batchList = get_last_12_hours_batches(getBatches())
-
 @app.route("/batches")
 def table():
-    return render_template("table.html", headings=headings, data=get_last_12_hours_batches(getBatches()))
+    data = get_last_12_hours_batches(getBatches())
+    if data == None:
+        return 'API unreachable. Refresh the web page once the API is running again.'
+    return render_template("table.html", headings=headings, data=data)
 
 if __name__ == "__main__":
-    #app.run(debug=True, port=7000)
     from waitress import serve
 
     serve(app, port=7000)
