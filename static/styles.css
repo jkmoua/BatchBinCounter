@@ -15,19 +15,19 @@
 	background-color: #e5e5e5;
 }
 
-.table__row:has(.active) {
-    background-color: #5cfb4b;
+.table__row.active {
+	background-color: #5cfb4b;
 }
 
-.table__row:has(.standby) {
+.table__row.standby {
     background-color: #e5e5e5;
 }
 
-.table__row:has(.paused) {
+.table__row.paused {
     background-color: #f6FB4B;
 }
 
-.table__row:has(.done) {
+.table__row.done {
     background-color: #fe6464;
 }
 
@@ -39,20 +39,4 @@
 	font-size: 32px;
 	padding: 12px;
 	padding-right: 80px;
-}
-
-.standby{
-	background-color: #e5e5e5;
-}
-
-.active{
-	background-color: #5cfb4b;
-}
-
-.paused{
-	background-color: #f6FB4B;
-}
-
-.done{
-	background-color: #fe6464;
 }
