@@ -23,20 +23,30 @@
             {% for dict_item in data | sort(attribute='name') %}
             <tr class="table__row">
 				{% for key, value in dict_item.items() %}
-					{% if value == "StandBy" %}
-					<td class="table__cell standby">{{ value }}</td>
-					{% elif value == "Active" %}
-					<td class="table__cell active">{{ value }}</td>
-					{% elif value == "Paused" %}
-					<td class="table__cell paused">{{ value }}</td>
-					{% elif value == "Done" %}
-					<td class="table__cell done">{{ value }}</td>
-					{% else %}
-					<td class="table__cell">{{ value }}</td>
-					{% endif %}
+				<td class="table__cell">{{ value }}</td>
 				{% endfor %}
             </tr>
             {% endfor %}
+
+			<script>
+				var children = document.getElementsByClassName('table__cell');
+				for (var i = 0; i < children.length; i++) {
+				  var child = children[i];
+				  if (child.innerHTML === 'StandBy') {
+					child.parentNode.classList.add('standby');
+				  }
+				  else if (child.innerHTML === 'Active') {
+					child.parentNode.classList.add('active');
+				  }
+				  else if (child.innerHTML === 'Paused') {
+					child.parentNode.classList.add('paused');
+				  }
+				  else if (child.innerHTML === 'Done') {
+					child.parentNode.classList.add('done');
+				  }
+				}
+			</script>
+
         </table>
     </body>
 </html>
