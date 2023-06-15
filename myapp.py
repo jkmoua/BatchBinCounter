@@ -15,7 +15,7 @@ data = (
 )
 
 def getBatches():
-    url = 'http://localhost:88/api/v1/batches'
+    url = 'http://localhost:88/api/v1/batches/gui?limit=20&offset=0'
     headers = { 'accept' : 'application/json' }
 
     try:
@@ -43,7 +43,30 @@ def get_last_12_hours_batches(batchResponse):
                 "startDateUtc" : batchResponse[x]["startDateUtc"],
                 "status" : batchResponse[x]["status"]
                 })
-        
+        if batchResponse[x]["status"] == 'Active':
+            formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
+            formattedDate = formattedDate.split('Z')[0]
+            batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
+            batchList.append({
+                "name" : batchResponse[x]["name"],
+                "expectedBinCount" : batchResponse[x]["expectedBinCount"],
+                "tippedBinCount" : batchResponse[x]["tippedBinCount"],
+                "startDateUtc" : batchTime,
+                "status" : batchResponse[x]["status"]
+                })
+
+        if batchResponse[x]["status"] == 'Paused':
+            formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
+            formattedDate = formattedDate.split('Z')[0]
+            batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
+            batchList.append({
+                "name" : batchResponse[x]["name"],
+                "expectedBinCount" : batchResponse[x]["expectedBinCount"],
+                "tippedBinCount" : batchResponse[x]["tippedBinCount"],
+                "startDateUtc" : batchTime,
+                "status" : batchResponse[x]["status"]
+                })
+		
         if batchResponse[x]['startDateUtc'] == None:
             continue
         formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
@@ -71,4 +94,4 @@ def table():
 if __name__ == "__main__":
     from waitress import serve
 
-    serve(app, port=7000)
+    serve(app, host="0.0.0.0", port=7000)
