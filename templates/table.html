@@ -14,6 +14,26 @@
 			<img src="{{url_for('static', filename='ellips-next-level-grading.png')}}"align="right" height="89" width="216"/ class="img">
 			</h1>
 		</center>
+
+		<form method="POST">
+			<label for="dropdown">Select an option:</label>
+			<select name="dropdown" id="dropdown", onchange="this.form.submit()">
+				<option value='1' {% if selected_option == 1 %}selected{% endif %}>Last hour</option>
+				<option value='3' {% if selected_option == 3 %}selected{% endif %}>Last 3 hours</option>
+				<option value='6' {% if selected_option == 6 %}selected{% endif %}>Last 6 hours</option>
+				<option value='8' {% if selected_option == 8 %}selected{% endif %}>Last 8 hours</option>
+				<option value='10' {% if selected_option == 10 %}selected{% endif %}>Last 10 hours</option>
+				<option value='12' {% if selected_option == 12 %}selected{% endif %}>Last 12 hours</option>
+			</select>
+			<noscript><input type="submit" value="Submit"></noscript>
+		</form>
+
+		<!--
+		{% if selected_option %}
+        	<h2>Selected Option: {{ selected_option }}</h2>
+    	{% endif %}	
+		-->
+
         <table class="table">
             <tr class="table__header">
                 {% for header in headings %}

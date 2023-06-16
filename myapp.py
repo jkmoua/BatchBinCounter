@@ -1,7 +1,7 @@
 import requests
 import time
 from datetime import datetime, timedelta
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
@@ -28,7 +28,7 @@ def getBatches():
     else:
         return getBatches.json()
     
-def get_last_12_hours_batches(batchResponse):
+def get_last_x_hours_batches(batchResponse, hour_filter):
     if batchResponse == None:
         return None
 
@@ -43,10 +43,12 @@ def get_last_12_hours_batches(batchResponse):
                 "startDateUtc" : batchResponse[x]["startDateUtc"],
                 "status" : batchResponse[x]["status"]
                 })
+
         if batchResponse[x]["status"] == 'Active':
             formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
             formattedDate = formattedDate.split('Z')[0]
             batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
+            batchTime = batchTime - timedelta(hours=7)
             batchList.append({
                 "name" : batchResponse[x]["name"],
                 "expectedBinCount" : batchResponse[x]["expectedBinCount"],
@@ -59,6 +61,7 @@ def get_last_12_hours_batches(batchResponse):
             formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
             formattedDate = formattedDate.split('Z')[0]
             batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
+            batchTime = batchTime - timedelta(hours=7)
             batchList.append({
                 "name" : batchResponse[x]["name"],
                 "expectedBinCount" : batchResponse[x]["expectedBinCount"],
@@ -69,27 +72,39 @@ def get_last_12_hours_batches(batchResponse):
 		
         if batchResponse[x]['startDateUtc'] == None:
             continue
-        formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
-        formattedDate = formattedDate.split('Z')[0]
-        batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
-        if abs(batchTime - datetime.now()) < timedelta(hours=12):
+
+        if batchResponse[x]["status"] == 'Done':
+            formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
+            formattedDate = formattedDate.split('Z')[0]
+            batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
             batchTime = batchTime - timedelta(hours=7)
-            batchList.append({
-                "name" : batchResponse[x]["name"],
-                "expectedBinCount" : batchResponse[x]["expectedBinCount"],
-                "tippedBinCount" : batchResponse[x]["tippedBinCount"],
-                "startDateUtc" : batchTime,
-                "status" : batchResponse[x]["status"]
-                })
+            if abs(batchTime - datetime.now()) < timedelta(hours=hour_filter):
+                batchList.append({
+                    "name" : batchResponse[x]["name"],
+                    "expectedBinCount" : batchResponse[x]["expectedBinCount"],
+                    "tippedBinCount" : batchResponse[x]["tippedBinCount"],
+                    "startDateUtc" : batchTime,
+                    "status" : batchResponse[x]["status"]
+                    })
             
     return batchList
 
-@app.route("/batches")
+@app.route("/batches", methods=['GET', 'POST'])
 def table():
-    data = get_last_12_hours_batches(getBatches())
+    selected_option = request.form.get('dropdown')
+    if selected_option == None:
+        selected_option = 12
+    if request.method == 'POST':
+        selected_option = int(request.form.get('dropdown'))
+        data = get_last_x_hours_batches(getBatches(), selected_option)
+        if data == None:
+            return 'API unreachable. Refresh the web page once the API is running again.'
+        return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
+
+    data = get_last_x_hours_batches(getBatches(), selected_option)
     if data == None:
         return 'API unreachable. Refresh the web page once the API is running again.'
-    return render_template("table.html", headings=headings, data=data)
+    return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
 
 if __name__ == "__main__":
     from waitress import serve
