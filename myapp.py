@@ -15,6 +15,7 @@ data = (
 )
 
 def getBatches():
+    """Make API call and return response in JSON form."""
     url = 'http://localhost:88/api/v1/batches/gui?limit=20&offset=0'
     headers = { 'accept' : 'application/json' }
 
@@ -31,6 +32,10 @@ def getBatches():
 
 
 def appendData(list, iter, batchResponse, batchTime):
+    """
+    Append dict to argument list. iter is the batch element in batchResponse which is the 
+    return value of the getBatches() method. batchTime is formatted time returned from formatDate().
+    """
     list.append({
                 "name" : batchResponse[iter]["name"],
                 "expectedBinCount" : batchResponse[iter]["expectedBinCount"],
@@ -42,28 +47,44 @@ def appendData(list, iter, batchResponse, batchTime):
 
 
 def formatDate(batchTime):
-    formattedDate = batchTime.split('.')[0]
-    formattedDate = formattedDate.split('Z')[0]
-    return datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S') - timedelta(hours=7)
+    """Format the 'startDateUtc' values of the form ISO 8601 from getBatches()."""
+    #formattedDate = batchTime.split('.')[0]
+    #formattedDate = formattedDate.split('Z')[0]
+    return datetime.strptime(batchTime, '%Y-%m-%dT%H:%M:%S.%fZ') - timedelta(hours=7)
 
 
 
 def buildData(batchResponse, hour_filter):
+    """Filters out batches with start date older than the hour_filter."""
     if batchResponse == None:
         return None
 
     batchList = []
 
-    for x in range(len(batchResponse)):
-        if batchResponse[x]["status"] == 'StandBy':
-            appendData(batchList, x, batchResponse, batchResponse[x]['startDateUtc'])
-        elif batchResponse[x]["status"] == 'Active' or batchResponse[x]["status"] == 'Paused':
-            batchTime = formatDate(batchResponse[x]['startDateUtc'])
-            appendData(batchList, x, batchResponse, batchTime)
-        elif batchResponse[x]["status"] == 'Done':
-            batchTime = formatDate(batchResponse[x]['startDateUtc'])
-            if abs(batchTime - datetime.now()) < timedelta(hours=hour_filter):
-                appendData(batchList, x, batchResponse, batchTime)
+    for batch in range(len(batchResponse)):
+        if batchResponse[batch]["status"] == 'StandBy':
+            appendData(batchList, batch, batchResponse, batchResponse[batch]['startDateUtc'])
+        elif batchResponse[batch]["status"] == 'Active' or batchResponse[batch]["status"] == 'Paused':
+            batchTime = formatDate(batchResponse[batch]['startDateUtc'])
+            appendData(batchList, batch, batchResponse, batchTime)
+        elif batchResponse[batch]["status"] == 'Done':
+            batchTime = formatDate(batchResponse[batch]['startDateUtc'])
+            if hour_filter == 600:
+                if datetime.now().time() > time(6, 0, 0):
+                    if batchTime > datetime.combine(datetime.now.date(), time(6, 0, 0)):
+                        appendData(batchList, batch, batchResponse, batchTime)
+                else:
+                    if batchTime > datetime.combine(datetime.now.date() - timedelta(days=1), time(6, 0, 0)):
+                        appendData(batchList, batch, batchResponse, batchTime)
+            elif hour_filter == 1800:
+                if datetime.now().time() > time(18, 0, 0):
+                    if batchTime > datetime.combine(datetime.now.date(), time(18, 0, 0)):
+                        appendData(batchList, batch, batchResponse, batchTime)
+                else:
+                    if batchTime > datetime.combine(datetime.now.date() - timedelta(days=1), time(18, 0, 0)):
+                        appendData(batchList, batch, batchResponse, batchTime)
+            elif abs(batchTime - datetime.now()) < timedelta(hours=hour_filter):
+                appendData(batchList, batch, batchResponse, batchTime)
             
     return batchList
 
@@ -71,6 +92,7 @@ def buildData(batchResponse, hour_filter):
 
 @app.route("/batches", methods=['GET', 'POST'])
 def table():
+    """Calls buildData() and renders the list to a table in a flask app."""
     selected_option = request.form.get('dropdown')
     if selected_option == None:
         selected_option = 12
