@@ -27,8 +27,28 @@ def getBatches():
         return None
     else:
         return getBatches.json()
-    
-def get_last_x_hours_batches(batchResponse, hour_filter):
+
+
+
+def appendData(list, iter, batchResponse, batchTime):
+    list.append({
+                "name" : batchResponse[iter]["name"],
+                "expectedBinCount" : batchResponse[iter]["expectedBinCount"],
+                "tippedBinCount" : batchResponse[iter]["tippedBinCount"],
+                "startDateUtc" : batchTime,
+                "status" : batchResponse[iter]["status"]
+        })
+
+
+
+def formatDate(batchTime):
+    formattedDate = batchTime.split('.')[0]
+    formattedDate = formattedDate.split('Z')[0]
+    return datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S') - timedelta(hours=7)
+
+
+
+def buildData(batchResponse, hour_filter):
     if batchResponse == None:
         return None
 
@@ -36,58 +56,18 @@ def get_last_x_hours_batches(batchResponse, hour_filter):
 
     for x in range(len(batchResponse)):
         if batchResponse[x]["status"] == 'StandBy':
-            batchList.append({
-                "name" : batchResponse[x]["name"],
-                "expectedBinCount" : batchResponse[x]["expectedBinCount"],
-                "tippedBinCount" : batchResponse[x]["tippedBinCount"],
-                "startDateUtc" : batchResponse[x]["startDateUtc"],
-                "status" : batchResponse[x]["status"]
-                })
-
-        if batchResponse[x]["status"] == 'Active':
-            formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
-            formattedDate = formattedDate.split('Z')[0]
-            batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
-            batchTime = batchTime - timedelta(hours=7)
-            batchList.append({
-                "name" : batchResponse[x]["name"],
-                "expectedBinCount" : batchResponse[x]["expectedBinCount"],
-                "tippedBinCount" : batchResponse[x]["tippedBinCount"],
-                "startDateUtc" : batchTime,
-                "status" : batchResponse[x]["status"]
-                })
-
-        if batchResponse[x]["status"] == 'Paused':
-            formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
-            formattedDate = formattedDate.split('Z')[0]
-            batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
-            batchTime = batchTime - timedelta(hours=7)
-            batchList.append({
-                "name" : batchResponse[x]["name"],
-                "expectedBinCount" : batchResponse[x]["expectedBinCount"],
-                "tippedBinCount" : batchResponse[x]["tippedBinCount"],
-                "startDateUtc" : batchTime,
-                "status" : batchResponse[x]["status"]
-                })
-		
-        if batchResponse[x]['startDateUtc'] == None:
-            continue
-
-        if batchResponse[x]["status"] == 'Done':
-            formattedDate = batchResponse[x]['startDateUtc'].split('.')[0]
-            formattedDate = formattedDate.split('Z')[0]
-            batchTime = datetime.strptime(formattedDate, '%Y-%m-%dT%H:%M:%S')
-            batchTime = batchTime - timedelta(hours=7)
+            appendData(batchList, x, batchResponse, batchResponse[x]['startDateUtc'])
+        elif batchResponse[x]["status"] == 'Active' or batchResponse[x]["status"] == 'Paused':
+            batchTime = formatDate(batchResponse[x]['startDateUtc'])
+            appendData(batchList, x, batchResponse, batchTime)
+        elif batchResponse[x]["status"] == 'Done':
+            batchTime = formatDate(batchResponse[x]['startDateUtc'])
             if abs(batchTime - datetime.now()) < timedelta(hours=hour_filter):
-                batchList.append({
-                    "name" : batchResponse[x]["name"],
-                    "expectedBinCount" : batchResponse[x]["expectedBinCount"],
-                    "tippedBinCount" : batchResponse[x]["tippedBinCount"],
-                    "startDateUtc" : batchTime,
-                    "status" : batchResponse[x]["status"]
-                    })
+                appendData(batchList, x, batchResponse, batchTime)
             
     return batchList
+
+
 
 @app.route("/batches", methods=['GET', 'POST'])
 def table():
@@ -96,17 +76,18 @@ def table():
         selected_option = 12
     if request.method == 'POST':
         selected_option = int(request.form.get('dropdown'))
-        data = get_last_x_hours_batches(getBatches(), selected_option)
+        data = buildData(getBatches(), selected_option)
         if data == None:
             return 'API unreachable. Refresh the web page once the API is running again.'
         return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
 
-    data = get_last_x_hours_batches(getBatches(), selected_option)
+    data = buildData(getBatches(), selected_option)
     if data == None:
         return 'API unreachable. Refresh the web page once the API is running again.'
     return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
 
+
+
 if __name__ == "__main__":
     from waitress import serve
-
     serve(app, host="0.0.0.0", port=7000)
