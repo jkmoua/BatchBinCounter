@@ -6,13 +6,6 @@ from flask import Flask, render_template, request, redirect, url_for
 app = Flask(__name__)
 
 headings = ('Batch Name', 'Bins Expected', 'Bins Tipped', 'Start Time', 'Status')
-data = (
-    ('Batch 1', 100, 99, '4:51 AM'),
-    ('Batch 2', 10, 10, '6:47 AM'),
-    ('Batch 3', 204, 205, '7:22 AM'),
-    ('Batch 4', 190, 190, '10:22 AM'),
-    ('Batch 5', 19, 5, '11:22 AM')
-)
 
 def getBatches():
     """Make API call and return response in JSON form."""
