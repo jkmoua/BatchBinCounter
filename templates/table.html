@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta http-equiv="refresh" content="300"/>
+        <meta http-equiv="refresh" content="30"; URL={{ url_for('table', selected_option=selected_option) }}/>
         <title>Joey Batches</title>
         <link rel="stylesheet" href="/static/styles.css" />
     </head>
@@ -29,12 +29,6 @@
 			</select>
 			<noscript><input type="submit" value="Submit"></noscript>
 		</form>
-
-		<!--
-		{% if selected_option %}
-        	<h2>Selected Option: {{ selected_option }}</h2>
-    	{% endif %}	
-		-->
 
         <table class="table">
             <tr class="table__header">

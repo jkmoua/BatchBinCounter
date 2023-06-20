@@ -48,13 +48,12 @@ def appendData(list, iter, batchResponse, batchTime):
 
 def formatDate(batchTime):
     """Format the 'startDateUtc' values of the form ISO 8601 from getBatches()."""
-    #formattedDate = batchTime.split('.')[0]
-    #formattedDate = formattedDate.split('Z')[0]
     return str(datetime.strptime(batchTime, '%Y-%m-%dT%H:%M:%S.%fZ') - timedelta(hours=7)).split('.')[0]
 
 
 
 def format_to_datetime(time):
+    """Return the string argument as datetime object"""
     return datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
 
 
@@ -98,17 +97,18 @@ def buildData(batchResponse, hour_filter):
 @app.route("/batches", methods=['GET', 'POST'])
 def table():
     """Calls buildData() and renders the list to a table in a flask app."""
-    selected_option = request.form.get('dropdown')
-    if selected_option == None:
-        selected_option = 12
     if request.method == 'POST':
         selected_option = int(request.form.get('dropdown'))
         data = buildData(getBatches(), selected_option)
         if data == None:
             return 'API unreachable. Refresh the web page once the API is running again.'
-        #return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
-        return redirect(url_for('table'))
+        return redirect(url_for('table', selected_option=selected_option))
 
+    selected_option = request.args.get('selected_option')
+    if selected_option == None:
+        selected_option = 12
+    else:
+        selected_option = int(selected_option)
     data = buildData(getBatches(), selected_option)
     if data == None:
         return 'API unreachable. Refresh the web page once the API is running again.'
