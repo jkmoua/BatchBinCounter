@@ -1,6 +1,6 @@
 import requests
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
@@ -50,7 +50,12 @@ def formatDate(batchTime):
     """Format the 'startDateUtc' values of the form ISO 8601 from getBatches()."""
     #formattedDate = batchTime.split('.')[0]
     #formattedDate = formattedDate.split('Z')[0]
-    return datetime.strptime(batchTime, '%Y-%m-%dT%H:%M:%S.%fZ') - timedelta(hours=7)
+    return str(datetime.strptime(batchTime, '%Y-%m-%dT%H:%M:%S.%fZ') - timedelta(hours=7)).split('.')[0]
+
+
+
+def format_to_datetime(time):
+    return datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
 
 
 
@@ -71,19 +76,19 @@ def buildData(batchResponse, hour_filter):
             batchTime = formatDate(batchResponse[batch]['startDateUtc'])
             if hour_filter == 600:
                 if datetime.now().time() > time(6, 0, 0):
-                    if batchTime > datetime.combine(datetime.now.date(), time(6, 0, 0)):
+                    if format_to_datetime(batchTime) > datetime.combine(datetime.now().date(), time(6, 0, 0)):
                         appendData(batchList, batch, batchResponse, batchTime)
                 else:
-                    if batchTime > datetime.combine(datetime.now.date() - timedelta(days=1), time(6, 0, 0)):
+                    if format_to_datetime(batchTime) > datetime.combine(datetime.now().date() - timedelta(days=1), time(6, 0, 0)):
                         appendData(batchList, batch, batchResponse, batchTime)
             elif hour_filter == 1800:
                 if datetime.now().time() > time(18, 0, 0):
-                    if batchTime > datetime.combine(datetime.now.date(), time(18, 0, 0)):
+                    if format_to_datetime(batchTime) > datetime.combine(datetime.now().date(), time(18, 0, 0)):
                         appendData(batchList, batch, batchResponse, batchTime)
                 else:
-                    if batchTime > datetime.combine(datetime.now.date() - timedelta(days=1), time(18, 0, 0)):
+                    if format_to_datetime(batchTime) > datetime.combine(datetime.now().date() - timedelta(days=1), time(18, 0, 0)):
                         appendData(batchList, batch, batchResponse, batchTime)
-            elif abs(batchTime - datetime.now()) < timedelta(hours=hour_filter):
+            elif abs(format_to_datetime(batchTime) - datetime.now()) < timedelta(hours=hour_filter):
                 appendData(batchList, batch, batchResponse, batchTime)
             
     return batchList
