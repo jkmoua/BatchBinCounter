@@ -15,7 +15,7 @@
 			</h1>
 		</center>
 
-		<form method="POST">
+		<form method="POST" class="drop__down">
 			<label for="dropdown">Select an option:</label>
 			<select name="dropdown" id="dropdown", onchange="this.form.submit()">
 				<option value='1' {% if selected_option == 1 %}selected{% endif %}>Last hour</option>

@@ -11,6 +11,10 @@
 	padding-top: 30px;
 }
 
+.drop__down {
+	padding-left: 275px
+}
+
 .table__row:nth-child(even){
 	background-color: #e5e5e5;
 }
