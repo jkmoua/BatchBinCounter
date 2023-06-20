@@ -98,21 +98,21 @@ def buildData(batchResponse, hour_filter):
 def table():
     """Calls buildData() and renders the list to a table in a flask app."""
     if request.method == 'POST':
-        selected_option = int(request.form.get('dropdown'))
-        data = buildData(getBatches(), selected_option)
+        time_filter = int(request.form.get('dropdown'))
+        data = buildData(getBatches(), time_filter)
         if data == None:
             return 'API unreachable. Refresh the web page once the API is running again.'
-        return redirect(url_for('table', selected_option=selected_option))
+        return redirect(url_for('table', time_filter=time_filter))
 
-    selected_option = request.args.get('selected_option')
-    if selected_option == None:
-        selected_option = 12
+    time_filter = request.args.get('time_filter')
+    if time_filter == None:
+        time_filter = 12
     else:
-        selected_option = int(selected_option)
-    data = buildData(getBatches(), selected_option)
+        time_filter = int(time_filter)
+    data = buildData(getBatches(), time_filter)
     if data == None:
         return 'API unreachable. Refresh the web page once the API is running again.'
-    return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
+    return render_template("table.html", headings=headings, data=data, time_filter=time_filter)
 
 
 

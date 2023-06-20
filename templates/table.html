@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta http-equiv="refresh" content="30"; URL={{ url_for('table', selected_option=selected_option) }}/>
+        <meta http-equiv="refresh" content="30"; URL={{ url_for('table', time_filter=time_filter) }}/>
         <title>Joey Batches</title>
         <link rel="stylesheet" href="/static/styles.css" />
     </head>
@@ -18,14 +18,14 @@
 		<form method="POST" class="drop__down">
 			<label for="dropdown">Select an option:</label>
 			<select name="dropdown" id="dropdown", onchange="this.form.submit()">
-				<option value='1' {% if selected_option == 1 %}selected{% endif %}>Last hour</option>
-				<option value='3' {% if selected_option == 3 %}selected{% endif %}>Last 3 hours</option>
-				<option value='6' {% if selected_option == 6 %}selected{% endif %}>Last 6 hours</option>
-				<option value='8' {% if selected_option == 8 %}selected{% endif %}>Last 8 hours</option>
-				<option value='10' {% if selected_option == 10 %}selected{% endif %}>Last 10 hours</option>
-				<option value='12' {% if selected_option == 12 %}selected{% endif %}>Last 12 hours</option>
-				<option value='600' {% if selected_option == 600 %}selected{% endif %}>Since 6:00AM</option>
-				<option value='1800' {% if selected_option == 1800 %}selected{% endif %}>Since 6:00PM</option>
+				<option value='1' {% if time_filter == 1 %}selected{% endif %}>Last hour</option>
+				<option value='3' {% if time_filter == 3 %}selected{% endif %}>Last 3 hours</option>
+				<option value='6' {% if time_filter == 6 %}selected{% endif %}>Last 6 hours</option>
+				<option value='8' {% if time_filter == 8 %}selected{% endif %}>Last 8 hours</option>
+				<option value='10' {% if time_filter == 10 %}selected{% endif %}>Last 10 hours</option>
+				<option value='12' {% if time_filter == 12 %}selected{% endif %}>Last 12 hours</option>
+				<option value='600' {% if time_filter == 600 %}selected{% endif %}>Since 6:00AM</option>
+				<option value='1800' {% if time_filter == 1800 %}selected{% endif %}>Since 6:00PM</option>
 			</select>
 			<noscript><input type="submit" value="Submit"></noscript>
 		</form>
