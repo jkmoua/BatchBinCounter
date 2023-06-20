@@ -20,7 +20,7 @@ def getBatches():
             file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - WebApp unable to reach TrueSort API.\n')
         return None
     else:
-        return getBatches.json()
+        return sorted(getBatches.json(), key=lambda x: x['name'])
 
 
 
