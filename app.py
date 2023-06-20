@@ -1,7 +1,7 @@
 import requests
 import time
 from datetime import datetime, timedelta, time
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
@@ -106,7 +106,8 @@ def table():
         data = buildData(getBatches(), selected_option)
         if data == None:
             return 'API unreachable. Refresh the web page once the API is running again.'
-        return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
+        #return render_template("table.html", headings=headings, data=data, selected_option=selected_option)
+        return redirect(url_for('table'))
 
     data = buildData(getBatches(), selected_option)
     if data == None:
