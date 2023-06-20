@@ -5,10 +5,14 @@ from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
-headings = ('Batch Name', 'Bins Expected', 'Bins Tipped', 'Start Time', 'Status')
+headings = ('Batch Name', 'Bins Expected', 'Bins Tipped', 'Total Bins Tipped', 'Start Time', 'Status')
 
-def getBatches():
+def getBatches(test=False):
     """Make API call and return response in JSON form."""
+    if test == True:
+        with open('response.json') as file:
+            return sorted(json.load(file), key=lambda x: x['name'])
+        
     url = 'http://localhost:88/api/v1/batches/gui?limit=20&offset=0'
     headers = { 'accept' : 'application/json' }
 
@@ -17,7 +21,7 @@ def getBatches():
     except requests.exceptions.ConnectionError:
         # Log to file
         with open('error_log.txt', 'a+') as file:
-            file.write(f'{time.strftime("%H:%M:%S")} {time.strftime("%d/%m/%Y")} - WebApp unable to reach TrueSort API.\n')
+            file.write(f'{tm.strftime("%H:%M:%S")} {tm.strftime("%d/%m/%Y")} - WebApp unable to reach TrueSort API.\n')
         return None
     else:
         return sorted(getBatches.json(), key=lambda x: x['name'])
