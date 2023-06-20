@@ -36,13 +36,22 @@ def appendData(list, iter, batchResponse, batchTime):
     Append dict to argument list. iter is the batch element in batchResponse which is the 
     return value of the getBatches() method. batchTime is formatted time returned from formatDate().
     """
-    list.append({
+    if batchResponse[iter]["status"] == "StandBy":
+        list.append({
                 "name" : batchResponse[iter]["name"],
                 "expectedBinCount" : batchResponse[iter]["expectedBinCount"],
                 "tippedBinCount" : batchResponse[iter]["tippedBinCount"],
                 "startDateUtc" : batchTime,
-                "status" : batchResponse[iter]["status"]
+                "status" : "Standby"
         })
+    else:
+        list.append({
+                    "name" : batchResponse[iter]["name"],
+                    "expectedBinCount" : batchResponse[iter]["expectedBinCount"],
+                    "tippedBinCount" : batchResponse[iter]["tippedBinCount"],
+                    "startDateUtc" : batchTime,
+                    "status" : batchResponse[iter]["status"]
+            })
 
 
 
@@ -72,6 +81,8 @@ def buildData(batchResponse, hour_filter):
             batchTime = formatDate(batchResponse[batch]['startDateUtc'])
             appendData(batchList, batch, batchResponse, batchTime)
         elif batchResponse[batch]["status"] == 'Done':
+            if batchResponse[batch]['startDateUtc'] == None:
+                continue
             batchTime = formatDate(batchResponse[batch]['startDateUtc'])
             if hour_filter == 600:
                 if datetime.now().time() > time(6, 0, 0):
