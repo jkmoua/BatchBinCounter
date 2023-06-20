@@ -24,26 +24,28 @@ def getBatches():
 
 
 
-def appendData(list, iter, batchResponse, batchTime):
+def appendData(list, batch, batchResponse, batchTime, total_bins):
     """
-    Append dict to argument list. iter is the batch element in batchResponse which is the 
+    Append dict to argument list. batch is the batch element in batchResponse which is the 
     return value of the getBatches() method. batchTime is formatted time returned from formatDate().
     """
-    if batchResponse[iter]["status"] == "StandBy":
+    if batchResponse[batch]["status"] == "StandBy":
         list.append({
-                "name" : batchResponse[iter]["name"],
-                "expectedBinCount" : batchResponse[iter]["expectedBinCount"],
-                "tippedBinCount" : batchResponse[iter]["tippedBinCount"],
+                "name" : batchResponse[batch]["name"],
+                "expectedBinCount" : batchResponse[batch]["expectedBinCount"],
+                "tippedBinCount" : batchResponse[batch]["tippedBinCount"],
+                "total_bins" : total_bins,
                 "startDateUtc" : batchTime,
                 "status" : "Standby"
         })
     else:
         list.append({
-                    "name" : batchResponse[iter]["name"],
-                    "expectedBinCount" : batchResponse[iter]["expectedBinCount"],
-                    "tippedBinCount" : batchResponse[iter]["tippedBinCount"],
+                    "name" : batchResponse[batch]["name"],
+                    "expectedBinCount" : batchResponse[batch]["expectedBinCount"],
+                    "tippedBinCount" : batchResponse[batch]["tippedBinCount"],
+                    "total_bins" : total_bins,
                     "startDateUtc" : batchTime,
-                    "status" : batchResponse[iter]["status"]
+                    "status" : batchResponse[batch]["status"]
             })
 
 
@@ -66,13 +68,15 @@ def buildData(batchResponse, hour_filter):
         return None
 
     batchList = []
+    total_bins = 0
 
     for batch in range(len(batchResponse)):
+        total_bins = total_bins + int(batchResponse[batch]['tippedBinCount'])
         if batchResponse[batch]["status"] == 'StandBy':
-            appendData(batchList, batch, batchResponse, batchResponse[batch]['startDateUtc'])
+            appendData(batchList, batch, batchResponse, batchResponse[batch]['startDateUtc'], total_bins)
         elif batchResponse[batch]["status"] == 'Active' or batchResponse[batch]["status"] == 'Paused':
             batchTime = formatDate(batchResponse[batch]['startDateUtc'])
-            appendData(batchList, batch, batchResponse, batchTime)
+            appendData(batchList, batch, batchResponse, batchTime, total_bins)
         elif batchResponse[batch]["status"] == 'Done':
             if batchResponse[batch]['startDateUtc'] == None:
                 continue
@@ -80,19 +84,19 @@ def buildData(batchResponse, hour_filter):
             if hour_filter == 600:
                 if datetime.now().time() > time(6, 0, 0):
                     if format_to_datetime(batchTime) > datetime.combine(datetime.now().date(), time(6, 0, 0)):
-                        appendData(batchList, batch, batchResponse, batchTime)
+                        appendData(batchList, batch, batchResponse, batchTime, total_bins)
                 else:
                     if format_to_datetime(batchTime) > datetime.combine(datetime.now().date() - timedelta(days=1), time(6, 0, 0)):
-                        appendData(batchList, batch, batchResponse, batchTime)
+                        appendData(batchList, batch, batchResponse, batchTime, total_bins)
             elif hour_filter == 1800:
                 if datetime.now().time() > time(18, 0, 0):
                     if format_to_datetime(batchTime) > datetime.combine(datetime.now().date(), time(18, 0, 0)):
-                        appendData(batchList, batch, batchResponse, batchTime)
+                        appendData(batchList, batch, batchResponse, batchTime, total_bins)
                 else:
                     if format_to_datetime(batchTime) > datetime.combine(datetime.now().date() - timedelta(days=1), time(18, 0, 0)):
-                        appendData(batchList, batch, batchResponse, batchTime)
+                        appendData(batchList, batch, batchResponse, batchTime, total_bins)
             elif abs(format_to_datetime(batchTime) - datetime.now()) < timedelta(hours=hour_filter):
-                appendData(batchList, batch, batchResponse, batchTime)
+                appendData(batchList, batch, batchResponse, batchTime, total_bins)
             
     return batchList
 
